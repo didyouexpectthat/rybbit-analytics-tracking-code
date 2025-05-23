@@ -34,10 +34,10 @@ If applicable, add screenshots to help explain your problem.
  - Browser [e.g. stock browser, safari]
  - Version [e.g. 22]
 
-** WordPress
+** WordPress:**
  - Version [e.g. 6.8]
 
-** Rybbit
+** Rybbit:**
  - Version [e.g. 0.31]
 
 **Additional context**
