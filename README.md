@@ -8,7 +8,7 @@ This plugin allows you to easily add Rybbit tracking code to your WordPress site
 
 ## Installation
 
-1. Download the latest release zip file from the [Releases page](https://github.com/didyouexpectthat/rybbit-for-wordpress/releases)
+1. Download the latest release zip file from the [Releases page](https://github.com/didyouexpectthat/rybbit-analytics-tracking-code/releases)
 2. In your WordPress admin, go to Plugins > Add New > Upload Plugin
 3. Upload the zip file and activate the plugin
 
