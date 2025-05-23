@@ -4,7 +4,7 @@
 Plugin Name: Rybbit Analytics Tracking Code
 Plugin URI: https://github.com/didyouexpectthat/rybbit-analytics-tracking-code
 Description: Integrates Rybbit tracking code into your WordPress site.
-Version: 1.0
+Version: 1.1
 Author: didyouexpectthat
 Author URI: https://github.com/didyouexpectthat/
 License: GNU General Public License v2.0
@@ -88,15 +88,41 @@ function rybbit_add_admin_menu() {
 add_action('admin_menu', 'rybbit_add_admin_menu');
 
 /**
+ * Validate and sanitize the Rybbit script URL
+ *
+ * Ensures the URL ends with '/api/script.js' as required by Rybbit.
+ *
+ * @param string $url The URL to validate
+ * @return string The sanitized URL or default URL if invalid
+ */
+function rybbit_validate_script_url($url) {
+    // First sanitize the URL
+    $url = esc_url_raw($url);
+
+    // Check if the URL ends with '/api/script.js'
+    if (!empty($url) && !preg_match('#/api/script\.js$#', $url)) {
+        // URL doesn't end with the required suffix
+        add_settings_error(
+            'rybbit_script_url',
+            'rybbit_script_url_error',
+            'The Rybbit script URL must end with "/api/script.js"',
+            'error'
+        );
+        // Return the previous valid value or default
+        return get_option('rybbit_script_url', 'https://tracking.example.com/api/script.js');
+    }
+
+    return $url;
+}
+
+/**
  * Register Rybbit settings
  *
  * Registers the settings fields for Rybbit configuration.
- *
-
  */
 function rybbit_settings_init() {
     register_setting('rybbit_settings', 'rybbit_script_url', array(
-        'sanitize_callback' => 'esc_url_raw',
+        'sanitize_callback' => 'rybbit_validate_script_url',
         'default' => 'https://tracking.example.com/api/script.js'
     ));
 
