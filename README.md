@@ -25,7 +25,7 @@ The tracking code will be automatically added to your site's header once you've 
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the GPLv2 License - see the [LICENSE](LICENSE) file for details.
 
 ## Disclaimer
 
