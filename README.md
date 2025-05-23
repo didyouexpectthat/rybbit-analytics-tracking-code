@@ -17,9 +17,10 @@ This plugin allows you to easily add Rybbit tracking code to your WordPress site
 1. After activation, go to Settings > Rybbit
 2. Enter your Rybbit Script URL (default: https://tracking.example.com/api/script.js)
 3. Enter your Rybbit Site ID
-4. Save changes
-
-![image](https://github.com/user-attachments/assets/1b4ea550-3ac2-41fb-9c44-099c962cd014)
+4. Optionally, modify advanced settings.
+5. Save changes
+   
+![image](https://github.com/user-attachments/assets/c049e1e0-e999-456d-80ee-d1acbab703c1)
 
 The tracking code will be automatically added to your site's header once you've configured your Site ID.
 
