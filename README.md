@@ -19,6 +19,8 @@ This plugin allows you to easily add Rybbit tracking code to your WordPress site
 3. Enter your Rybbit Site ID
 4. Save changes
 
+![image](https://github.com/user-attachments/assets/1b4ea550-3ac2-41fb-9c44-099c962cd014)
+
 The tracking code will be automatically added to your site's header once you've configured your Site ID.
 
 ## License
