@@ -4,7 +4,7 @@
 Plugin Name: Rybbit Analytics Tracking Code
 Plugin URI: https://github.com/didyouexpectthat/rybbit-analytics-tracking-code
 Description: Integrates Rybbit tracking code into your WordPress site.
-Version: 1.1
+Version: 1.2
 Author: didyouexpectthat
 Author URI: https://github.com/didyouexpectthat/
 License: GNU General Public License v2.0
