@@ -1,8 +1,8 @@
 <?php
 
 /*
-Plugin Name: Rybbit Plugin for WordPress
-Plugin URI: https://github.com/didyouexpectthat/rybbit-wordpress-plugin
+Plugin Name: Rybbit for WordPress
+Plugin URI: https://github.com/didyouexpectthat/rybbit-for-wordpress
 Description: Integrates Rybbit tracking code into your WordPress site.
 Version: 1.0
 Author: didyouexpectthat
