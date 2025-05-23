@@ -21,27 +21,6 @@ This plugin allows you to easily add Rybbit tracking code to your WordPress site
 
 The tracking code will be automatically added to your site's header once you've configured your Site ID.
 
-## Development
-
-### Release Process
-
-This plugin uses GitHub Actions to automatically create releases when a new version tag is pushed. The workflow:
-
-1. Creates a zip file of the plugin
-2. Creates a GitHub release
-3. Uploads the zip file as an asset to the release
-
-To create a new release:
-
-1. Update the version number in `rybbit-plugin.php` (both in the plugin header and the `RYBBIT_PLUGIN_VERSION` constant)
-2. Commit your changes
-3. Create and push a new tag with the version number prefixed with 'v' (e.g., `v1.1`)
-   ```
-   git tag v1.1
-   git push origin v1.1
-   ```
-4. GitHub Actions will automatically build the plugin zip and create a release
-
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
