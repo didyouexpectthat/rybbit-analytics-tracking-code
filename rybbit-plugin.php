@@ -1,7 +1,7 @@
 <?php
 
 /*
-Plugin Name: Rybbit for WordPress
+Plugin Name: Rybbit Analytics Tracking Code
 Plugin URI: https://github.com/didyouexpectthat/rybbit-for-wordpress
 Description: Integrates Rybbit tracking code into your WordPress site.
 Version: 1.0
