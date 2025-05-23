@@ -1,4 +1,4 @@
-# Rybbit Plugin for WordPress
+# Rybbit for WordPress
 
 A WordPress plugin that integrates Rybbit tracking code into your WordPress site.
 
