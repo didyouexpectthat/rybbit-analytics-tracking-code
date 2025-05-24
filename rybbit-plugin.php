@@ -4,7 +4,7 @@
 Plugin Name: Rybbit Analytics Tracking Code
 Plugin URI: https://github.com/didyouexpectthat/rybbit-analytics-tracking-code
 Description: Integrates Rybbit tracking code into your WordPress site.
-Version: 1.2
+Version: 1.3
 Author: didyouexpectthat
 Author URI: https://github.com/didyouexpectthat/
 License: GNU General Public License v2.0
@@ -18,7 +18,7 @@ Copyright (c) 2025 didyouexpectthat
 
 // If this file is called directly, abort.
 if (!defined('WPINC')) {
-    die;
+	die;
 }
 
 // Define plugin constants
@@ -36,14 +36,15 @@ register_deactivation_hook(__FILE__, 'rybbit_deactivate');
  * Initializes default options for Rybbit integration.
  */
 function rybbit_activate() {
-    // Initialize default options
-    add_option('rybbit_script_url', 'https://tracking.example.com/api/script.js');
-    add_option('rybbit_site_id', '');
-    add_option('rybbit_track_spa', true);
-    add_option('rybbit_track_query', true);
-    add_option('rybbit_skip_patterns', '');
-    add_option('rybbit_mask_patterns', '');
-    add_option('rybbit_debounce', 500);
+	// Initialize default options
+	add_option('rybbit_script_url', 'https://tracking.example.com/api/script.js');
+	add_option('rybbit_site_id', '');
+	add_option('rybbit_track_pgv', true);
+	add_option('rybbit_track_spa', true);
+	add_option('rybbit_track_query', true);
+	add_option('rybbit_skip_patterns', '');
+	add_option('rybbit_mask_patterns', '');
+	add_option('rybbit_debounce', 500);
 }
 
 /**
@@ -55,7 +56,7 @@ function rybbit_activate() {
  *
  */
 function rybbit_deactivate() {
-    // No cleanup on deactivation - settings are preserved
+	// No cleanup on deactivation - settings are preserved
 }
 
 /**
@@ -67,9 +68,9 @@ function rybbit_deactivate() {
 
  */
 function rybbit_settings_link($links) {
-    $settings_link = '<a href="options-general.php?page=rybbit-settings">Settings</a>';
-    array_unshift($links, $settings_link);
-    return $links;
+	$settings_link = '<a href="options-general.php?page=rybbit-settings">Settings</a>';
+	array_unshift($links, $settings_link);
+	return $links;
 }
 $plugin = plugin_basename(__FILE__);
 add_filter("plugin_action_links_$plugin", 'rybbit_settings_link');
@@ -82,13 +83,13 @@ add_filter("plugin_action_links_$plugin", 'rybbit_settings_link');
 
  */
 function rybbit_add_admin_menu() {
-    add_options_page(
-        'Rybbit Settings',
-        'Rybbit',
-        'manage_options',
-        'rybbit-settings',
-        'rybbit_options_page'
-    );
+	add_options_page(
+		'Rybbit Settings',
+		'Rybbit',
+		'manage_options',
+		'rybbit-settings',
+		'rybbit_options_page'
+	);
 }
 add_action('admin_menu', 'rybbit_add_admin_menu');
 
@@ -101,23 +102,23 @@ add_action('admin_menu', 'rybbit_add_admin_menu');
  * @return string The sanitized URL or default URL if invalid
  */
 function rybbit_validate_script_url($url) {
-    // First sanitize the URL
-    $url = esc_url_raw($url);
+	// First sanitize the URL
+	$url = esc_url_raw($url);
 
-    // Check if the URL ends with '/api/script.js'
-    if (!empty($url) && !preg_match('#/api/script\.js$#', $url)) {
-        // URL doesn't end with the required suffix
-        add_settings_error(
-            'rybbit_script_url',
-            'rybbit_script_url_error',
-            'The Rybbit script URL must end with "/api/script.js"',
-            'error'
-        );
-        // Return the previous valid value or default
-        return get_option('rybbit_script_url', 'https://tracking.example.com/api/script.js');
-    }
+	// Check if the URL ends with '/api/script.js'
+	if (!empty($url) && !preg_match('#/api/script\.js$#', $url)) {
+		// URL doesn't end with the required suffix
+		add_settings_error(
+			'rybbit_script_url',
+			'rybbit_script_url_error',
+			'The Rybbit script URL must end with "/api/script.js"',
+			'error'
+		);
+		// Return the previous valid value or default
+		return get_option('rybbit_script_url', 'https://tracking.example.com/api/script.js');
+	}
 
-    return $url;
+	return $url;
 }
 
 /**
@@ -126,110 +127,123 @@ function rybbit_validate_script_url($url) {
  * Registers the settings fields for Rybbit configuration.
  */
 function rybbit_settings_init() {
-    register_setting('rybbit_settings', 'rybbit_script_url', array(
-        'sanitize_callback' => 'rybbit_validate_script_url',
-        'default' => 'https://tracking.example.com/api/script.js'
-    ));
+	register_setting('rybbit_settings', 'rybbit_script_url', array(
+		'sanitize_callback' => 'rybbit_validate_script_url',
+		'default' => 'https://tracking.example.com/api/script.js'
+	));
 
-    register_setting('rybbit_settings', 'rybbit_site_id', array(
-        'sanitize_callback' => 'sanitize_text_field',
-        'default' => ''
-    ));
+	register_setting('rybbit_settings', 'rybbit_site_id', array(
+		'sanitize_callback' => 'sanitize_text_field',
+		'default' => ''
+	));
 
-    register_setting('rybbit_settings', 'rybbit_track_spa', array(
-        'sanitize_callback' => 'rest_sanitize_boolean',
-        'default' => true
-    ));
+	register_setting('rybbit_settings', 'rybbit_track_pgv', array(
+		'sanitize_callback' => 'rest_sanitize_boolean',
+		'default' => true
+	));
 
-    register_setting('rybbit_settings', 'rybbit_track_query', array(
-        'sanitize_callback' => 'rest_sanitize_boolean',
-        'default' => true
-    ));
+	register_setting('rybbit_settings', 'rybbit_track_spa', array(
+		'sanitize_callback' => 'rest_sanitize_boolean',
+		'default' => true
+	));
 
-    register_setting('rybbit_settings', 'rybbit_skip_patterns', array(
-        'sanitize_callback' => 'sanitize_textarea_field',
-        'default' => ''
-    ));
+	register_setting('rybbit_settings', 'rybbit_track_query', array(
+		'sanitize_callback' => 'rest_sanitize_boolean',
+		'default' => true
+	));
 
-    register_setting('rybbit_settings', 'rybbit_mask_patterns', array(
-        'sanitize_callback' => 'sanitize_textarea_field',
-        'default' => ''
-    ));
+	register_setting('rybbit_settings', 'rybbit_skip_patterns', array(
+		'sanitize_callback' => 'sanitize_textarea_field',
+		'default' => ''
+	));
 
-    register_setting('rybbit_settings', 'rybbit_debounce', array(
-        'sanitize_callback' => 'rybbit_validate_debounce',
-        'default' => 500
-    ));
+	register_setting('rybbit_settings', 'rybbit_mask_patterns', array(
+		'sanitize_callback' => 'sanitize_textarea_field',
+		'default' => ''
+	));
 
-    add_settings_section(
-        'rybbit_settings_section',
-        'Rybbit Settings',
-        'rybbit_settings_section_callback',
-        'rybbit-settings'
-    );
+	register_setting('rybbit_settings', 'rybbit_debounce', array(
+		'sanitize_callback' => 'rybbit_validate_debounce',
+		'default' => 500
+	));
 
-    add_settings_section(
-        'rybbit_advanced_section',
-        'Advanced Settings',
-        'rybbit_advanced_section_callback',
-        'rybbit-settings'
-    );
+	add_settings_section(
+		'rybbit_settings_section',
+		'Rybbit Settings',
+		'rybbit_settings_section_callback',
+		'rybbit-settings'
+	);
 
-    add_settings_field(
-        'rybbit_script_url',
-        'Script URL',
-        'rybbit_script_url_render',
-        'rybbit-settings',
-        'rybbit_settings_section'
-    );
+	add_settings_section(
+		'rybbit_advanced_section',
+		'Advanced Settings',
+		'rybbit_advanced_section_callback',
+		'rybbit-settings'
+	);
 
-    add_settings_field(
-        'rybbit_site_id',
-        'Site ID',
-        'rybbit_site_id_render',
-        'rybbit-settings',
-        'rybbit_settings_section'
-    );
+	add_settings_field(
+		'rybbit_script_url',
+		'Script URL',
+		'rybbit_script_url_render',
+		'rybbit-settings',
+		'rybbit_settings_section'
+	);
 
-    add_settings_field(
-        'rybbit_track_spa',
-        'Automatically track SPA navigation',
-        'rybbit_track_spa_render',
-        'rybbit-settings',
-        'rybbit_advanced_section'
-    );
+	add_settings_field(
+		'rybbit_site_id',
+		'Site ID',
+		'rybbit_site_id_render',
+		'rybbit-settings',
+		'rybbit_settings_section'
+	);
 
-    add_settings_field(
-        'rybbit_track_query',
-        'Track URL query parameters',
-        'rybbit_track_query_render',
-        'rybbit-settings',
-        'rybbit_advanced_section'
-    );
+	add_settings_field(
+		'rybbit_track_pgv',
+		'Automatically track initial pageview',
+		'rybbit_track_pgv_render',
+		'rybbit-settings',
+		'rybbit_advanced_section'
+	);
 
-    add_settings_field(
-        'rybbit_skip_patterns',
-        'Skip Patterns',
-        'rybbit_skip_patterns_render',
-        'rybbit-settings',
-        'rybbit_advanced_section'
-    );
+	add_settings_field(
+		'rybbit_track_spa',
+		'Automatically track SPA navigation',
+		'rybbit_track_spa_render',
+		'rybbit-settings',
+		'rybbit_advanced_section'
+	);
 
-    add_settings_field(
-        'rybbit_mask_patterns',
-        'Mask Patterns',
-        'rybbit_mask_patterns_render',
-        'rybbit-settings',
-        'rybbit_advanced_section'
-    );
+	add_settings_field(
+		'rybbit_track_query',
+		'Track URL query parameters',
+		'rybbit_track_query_render',
+		'rybbit-settings',
+		'rybbit_advanced_section'
+	);
 
-    add_settings_field(
-        'rybbit_debounce',
-        'Debounce Duration (ms)',
-        'rybbit_debounce_render',
-        'rybbit-settings',
-        'rybbit_advanced_section'
-    );
+	add_settings_field(
+		'rybbit_skip_patterns',
+		'Skip Patterns',
+		'rybbit_skip_patterns_render',
+		'rybbit-settings',
+		'rybbit_advanced_section'
+	);
+
+	add_settings_field(
+		'rybbit_mask_patterns',
+		'Mask Patterns',
+		'rybbit_mask_patterns_render',
+		'rybbit-settings',
+		'rybbit_advanced_section'
+	);
+
+	add_settings_field(
+		'rybbit_debounce',
+		'Debounce Duration (ms)',
+		'rybbit_debounce_render',
+		'rybbit-settings',
+		'rybbit_advanced_section'
+	);
 }
 add_action('admin_init', 'rybbit_settings_init');
 
@@ -241,11 +255,11 @@ add_action('admin_init', 'rybbit_settings_init');
 
  */
 function rybbit_script_url_render() {
-    $script_url = get_option('rybbit_script_url', '');
-    ?>
+	$script_url = get_option('rybbit_script_url', '');
+	?>
     <input type='url' class='regular-text' name='rybbit_script_url' value='<?php echo esc_attr($script_url); ?>'>
     <p class="description">The URL to the Rybbit script (default: https://tracking.example.com/api/script.js)</p>
-    <?php
+	<?php
 }
 
 /**
@@ -256,11 +270,11 @@ function rybbit_script_url_render() {
 
  */
 function rybbit_site_id_render() {
-    $site_id = get_option('rybbit_site_id', '');
-    ?>
+	$site_id = get_option('rybbit_site_id', '');
+	?>
     <input type='text' class='regular-text' name='rybbit_site_id' value='<?php echo esc_attr($site_id); ?>'>
     <p class="description">Your Rybbit Site ID</p>
-    <?php
+	<?php
 }
 
 /**
@@ -268,8 +282,8 @@ function rybbit_site_id_render() {
  *
  */
 function rybbit_settings_section_callback() {
-    echo '<p>Configure your Rybbit integration. You need to provide the script URL and your site ID.</p>';
-    echo '<p><small>Rybbit is a trademark and copyright of Rybbit. This plugin is not affiliated with or endorsed by Rybbit.</small></p>';
+	echo '<p>Configure your Rybbit integration. You need to provide the script URL and your site ID.</p>';
+	echo '<p><small>Rybbit is a trademark and copyright of Rybbit. This plugin is not affiliated with or endorsed by Rybbit.</small></p>';
 }
 
 /**
@@ -277,66 +291,80 @@ function rybbit_settings_section_callback() {
  *
  */
 function rybbit_advanced_section_callback() {
-    echo '<p>Configure advanced tracking options for Rybbit.</p>';
+	echo '<p>Configure advanced tracking options for Rybbit.</p>';
 }
 
 /**
  * Render the SPA tracking toggle
  */
-function rybbit_track_spa_render() {
-    $track_spa = get_option('rybbit_track_spa', true);
-    ?>
+function rybbit_track_pgv_render() {
+	$track_spa = get_option('rybbit_track_pgv', true);
+	?>
     <label>
         <input type='checkbox' name='rybbit_track_spa' <?php checked($track_spa); ?>>
         For SPAs: track page views when URL changes (using History API)
     </label>
-    <?php
+	<?php
+}
+
+
+/**
+ * Render the SPA tracking toggle
+ */
+function rybbit_track_spa_render() {
+	$track_spa = get_option('rybbit_track_spa', true);
+	?>
+    <label>
+        <input type='checkbox' name='rybbit_track_spa' <?php checked($track_spa); ?>>
+        For SPAs: track page views when URL changes (using History API)
+    </label>
+	<?php
 }
 
 /**
  * Render the query parameters tracking toggle
  */
 function rybbit_track_query_render() {
-    $track_query = get_option('rybbit_track_query', true);
-    ?>
+	$track_query = get_option('rybbit_track_query', true);
+	?>
     <label>
         <input type='checkbox' name='rybbit_track_query' <?php checked($track_query); ?>>
         Include query parameters in tracked URLs (may contain sensitive data)
     </label>
-    <?php
+	<?php
 }
 
 /**
  * Render the skip patterns textarea
  */
 function rybbit_skip_patterns_render() {
-    $skip_patterns = get_option('rybbit_skip_patterns', '');
-    ?>
+	$skip_patterns = get_option('rybbit_skip_patterns', '');
+	?>
     <textarea name='rybbit_skip_patterns' rows='5' cols='50'><?php echo esc_textarea($skip_patterns); ?></textarea>
     <p class="description">URL patterns to exclude from tracking (one per line)<br>Use * for single segment wildcard, ** for multi-segment wildcard</p>
-    <?php
+	<?php
 }
 
 /**
  * Render the mask patterns textarea
  */
 function rybbit_mask_patterns_render() {
-    $mask_patterns = get_option('rybbit_mask_patterns', '');
-    ?>
+	$mask_patterns = get_option('rybbit_mask_patterns', '');
+	?>
     <textarea name='rybbit_mask_patterns' rows='5' cols='50'><?php echo esc_textarea($mask_patterns); ?></textarea>
     <p class="description">URL patterns to anonymize in analytics (one per line)<br>E.g. /users/*/profile will hide usernames, /orders/** will hide order details</p>
-    <?php
+	<?php
 }
 
 /**
  * Render the debounce duration field
  */
 function rybbit_debounce_render() {
-    $debounce = get_option('rybbit_debounce', 500);
-    ?>
+	$debounce = get_option('rybbit_debounce', 500);
+	?>
     <input type='number' name='rybbit_debounce' value='<?php echo esc_attr($debounce); ?>' min='1' max='10000' step='1'>
     <p class="description">Default: 500ms (Range: 1-10000ms)<br>Time to wait before tracking a pageview after URL changes</p>
-    <?php
+	<?php
 }
 
 /**
@@ -345,18 +373,18 @@ function rybbit_debounce_render() {
  * Displays the Rybbit configuration form.
  */
 function rybbit_options_page() {
-    ?>
+	?>
     <div class="wrap">
         <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
         <form action='options.php' method='post'>
-            <?php
-            settings_fields('rybbit_settings');
-            do_settings_sections('rybbit-settings');
-            submit_button();
-            ?>
+			<?php
+			settings_fields('rybbit_settings');
+			do_settings_sections('rybbit-settings');
+			submit_button();
+			?>
         </form>
     </div>
-    <?php
+	<?php
 }
 
 /**
@@ -368,85 +396,85 @@ function rybbit_options_page() {
  * @return int The sanitized debounce value
  */
 function rybbit_validate_debounce($value) {
-    // Convert to integer
-    $value = absint($value);
+	// Convert to integer
+	$value = absint($value);
 
-    // Check minimum value
-    if ($value < 1) {
-        add_settings_error(
-            'rybbit_debounce',
-            'rybbit_debounce_too_low',
-            'Debounce duration must be at least 1ms',
-            'error'
-        );
-        // Return the default value
-        return get_option('rybbit_debounce', 500);
-    }
+	// Check minimum value
+	if ($value < 1) {
+		add_settings_error(
+			'rybbit_debounce',
+			'rybbit_debounce_too_low',
+			'Debounce duration must be at least 1ms',
+			'error'
+		);
+		// Return the default value
+		return get_option('rybbit_debounce', 500);
+	}
 
-    // Check maximum value (10 seconds = 10000ms)
-    if ($value > 10000) {
-        add_settings_error(
-            'rybbit_debounce',
-            'rybbit_debounce_too_high',
-            'Debounce duration cannot exceed 10000ms (10 seconds)',
-            'error'
-        );
-        // Return the default value
-        return get_option('rybbit_debounce', 500);
-    }
+	// Check maximum value (10 seconds = 10000ms)
+	if ($value > 10000) {
+		add_settings_error(
+			'rybbit_debounce',
+			'rybbit_debounce_too_high',
+			'Debounce duration cannot exceed 10000ms (10 seconds)',
+			'error'
+		);
+		// Return the default value
+		return get_option('rybbit_debounce', 500);
+	}
 
-    return $value;
+	return $value;
 }
 
 /**
  * Process patterns from textarea to JSON array
- * 
+ *
  * @param string $patterns_text Patterns from textarea (one per line)
  * @return string JSON encoded array of patterns or empty string on error
  */
 function rybbit_process_patterns($patterns_text) {
-    if (empty($patterns_text)) {
-        return '';
-    }
+	if (empty($patterns_text)) {
+		return '';
+	}
 
-    // Split by newlines and filter out empty lines
-    $patterns = preg_split('/\r\n|\r|\n/', $patterns_text);
-    $patterns = array_filter($patterns, function($line) {
-        return trim($line) !== '';
-    });
+	// Split by newlines and filter out empty lines
+	$patterns = preg_split('/\r\n|\r|\n/', $patterns_text);
+	$patterns = array_filter($patterns, function($line) {
+		return trim($line) !== '';
+	});
 
-    // Validate patterns - basic check for potentially problematic characters
-    foreach ($patterns as $key => $pattern) {
-        // Sanitize each pattern
-        $patterns[$key] = sanitize_text_field($pattern);
+	// Validate patterns - basic check for potentially problematic characters
+	foreach ($patterns as $key => $pattern) {
+		// Sanitize each pattern
+		$patterns[$key] = sanitize_text_field($pattern);
 
-        // Check for unbalanced wildcards or other potentially problematic patterns
-        if (substr_count($pattern, '*') > 0 && strpos($pattern, '**') === false && substr_count($pattern, '*') % 2 !== 0) {
-            // This is just a warning, not blocking submission
-            add_settings_error(
-                'rybbit_patterns',
-                'rybbit_pattern_warning',
-                'Warning: Pattern "' . esc_html($pattern) . '" may have unbalanced wildcards. Please verify your pattern syntax.',
-                'warning'
-            );
-        }
-    }
+		// Check for unbalanced wildcards or other potentially problematic patterns
+		if (substr_count($pattern, '*') > 0 && strpos($pattern, '**') === false && substr_count($pattern, '*') % 2 !== 0) {
+			// This is just a warning, not blocking submission
+			add_settings_error(
+				'rybbit_patterns',
+				'rybbit_pattern_warning',
+				'Warning: Pattern "' . esc_html($pattern) . '" may have unbalanced wildcards. Please verify your pattern syntax.',
+				'warning'
+			);
+		}
+	}
 
-    // Attempt to JSON encode the patterns
-    $json = json_encode(array_values($patterns));
+	// Attempt to JSON encode the patterns
+	$json = json_encode(array_values($patterns));
 
-    // Check for JSON encoding errors
-    if ($json === false) {
-        add_settings_error(
-            'rybbit_patterns',
-            'rybbit_json_error',
-            'Error encoding patterns: ' . esc_html(json_last_error_msg()),
-            'error'
-        );
-        return '';
-    }
+	// Check for JSON encoding errors
+	if ($json === false) {
+		add_settings_error(
+			'rybbit_patterns',
+			'rybbit_json_error',
+			'Error encoding patterns: ' . esc_html(json_last_error_msg()),
+			'error'
+		);
+		return '';
+	}
 
-    return $json;
+	return $json;
 }
 
 /**
@@ -456,6 +484,7 @@ function rybbit_add_tracking_code() {
 	// Get options with defaults
 	$script_url         = get_option( 'rybbit_script_url', 'https://tracking.example.com/api/script.js' );
 	$site_id            = get_option( 'rybbit_site_id', '' );
+	$track_pgv          = get_option( 'rybbit_track_pgv', true );
 	$track_spa          = get_option( 'rybbit_track_spa', true );
 	$track_query        = get_option( 'rybbit_track_query', true );
 	$skip_patterns_text = get_option( 'rybbit_skip_patterns', '' );
@@ -500,6 +529,11 @@ function rybbit_add_tracking_code() {
 	echo "    src=\"" . esc_url( $script_url ) . "\"\n";
 	echo "    data-site-id=\"" . esc_attr( $site_id ) . "\"\n";
 
+	// Add track inital pageview attribute if disabled (default is enabled)
+	if ( ! $track_pgv ) {
+		echo "    data-auto-track-pageview=\"false\"\n";
+	}
+
 	// Add SPA tracking attribute if disabled (default is enabled)
 	if ( ! $track_spa ) {
 		echo "    data-track-spa=\"false\"\n";
@@ -537,13 +571,14 @@ add_action('wp_head', 'rybbit_add_tracking_code');
  * Removes configuration data from the database.
  */
 function rybbit_uninstall() {
-    // Remove all options created by the plugin
-    delete_option('rybbit_script_url');
-    delete_option('rybbit_site_id');
-    delete_option('rybbit_track_spa');
-    delete_option('rybbit_track_query');
-    delete_option('rybbit_skip_patterns');
-    delete_option('rybbit_mask_patterns');
-    delete_option('rybbit_debounce');
+	// Remove all options created by the plugin
+	delete_option('rybbit_script_url');
+	delete_option('rybbit_site_id');
+	delete_option('rybbit_track_pgv');
+	delete_option('rybbit_track_spa');
+	delete_option('rybbit_track_query');
+	delete_option('rybbit_skip_patterns');
+	delete_option('rybbit_mask_patterns');
+	delete_option('rybbit_debounce');
 }
 register_uninstall_hook(__FILE__, 'rybbit_uninstall');
