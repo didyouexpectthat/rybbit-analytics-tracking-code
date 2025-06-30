@@ -4,7 +4,7 @@
 Plugin Name: Rybbit Analytics Tracking Code
 Plugin URI: https://github.com/didyouexpectthat/rybbit-analytics-tracking-code
 Description: Integrates Rybbit tracking code into your WordPress site.
-Version: 1.3
+Version: 1.4
 Author: didyouexpectthat
 Author URI: https://github.com/didyouexpectthat/
 License: GNU General Public License v2.0
@@ -22,7 +22,7 @@ if (!defined('WPINC')) {
 }
 
 // Define plugin constants
-define('RYBBIT_PLUGIN_VERSION', '1.2');
+define('RYBBIT_PLUGIN_VERSION', '1.4');
 define('RYBBIT_PLUGIN_PATH', plugin_dir_path(__FILE__));
 define('RYBBIT_PLUGIN_URL', plugin_dir_url(__FILE__));
 
@@ -42,6 +42,9 @@ function rybbit_activate() {
 	add_option('rybbit_track_pgv', true);
 	add_option('rybbit_track_spa', true);
 	add_option('rybbit_track_query', true);
+	add_option('rybbit_track_errors', false);
+	add_option('rybbit_web_vitals', false);
+	add_option('rybbit_session_replay', false);
 	add_option('rybbit_skip_patterns', '');
 	add_option('rybbit_mask_patterns', '');
 	add_option('rybbit_debounce', 500);
@@ -162,12 +165,27 @@ function rybbit_settings_init() {
 		'default' => ''
 	));
 
-	register_setting('rybbit_settings', 'rybbit_debounce', array(
-		'sanitize_callback' => 'rybbit_validate_debounce',
-		'default' => 500
-	));
+ register_setting('rybbit_settings', 'rybbit_debounce', array(
+        'sanitize_callback' => 'rybbit_validate_debounce',
+        'default' => 500
+    ));
 
-	add_settings_section(
+    register_setting('rybbit_settings', 'rybbit_track_errors', array(
+        'sanitize_callback' => 'rest_sanitize_boolean',
+        'default' => false
+    ));
+
+    register_setting('rybbit_settings', 'rybbit_web_vitals', array(
+        'sanitize_callback' => 'rest_sanitize_boolean',
+        'default' => false
+    ));
+
+    register_setting('rybbit_settings', 'rybbit_session_replay', array(
+        'sanitize_callback' => 'rest_sanitize_boolean',
+        'default' => false
+    ));
+
+    add_settings_section(
 		'rybbit_settings_section',
 		'Rybbit Settings',
 		'rybbit_settings_section_callback',
@@ -237,13 +255,37 @@ function rybbit_settings_init() {
 		'rybbit_advanced_section'
 	);
 
-	add_settings_field(
-		'rybbit_debounce',
-		'Debounce Duration (ms)',
-		'rybbit_debounce_render',
-		'rybbit-settings',
-		'rybbit_advanced_section'
-	);
+    add_settings_field(
+        'rybbit_debounce',
+        'Debounce Duration (ms)',
+        'rybbit_debounce_render',
+        'rybbit-settings',
+        'rybbit_advanced_section'
+    );
+
+    add_settings_field(
+        'rybbit_track_errors',
+        'Track JavaScript errors',
+        'rybbit_track_errors_render',
+        'rybbit-settings',
+        'rybbit_advanced_section'
+    );
+
+    add_settings_field(
+        'rybbit_web_vitals',
+        'Enable Web Vitals performance metrics',
+        'rybbit_web_vitals_render',
+        'rybbit-settings',
+        'rybbit_advanced_section'
+    );
+
+    add_settings_field(
+        'rybbit_session_replay',
+        'Enable session replay',
+        'rybbit_session_replay_render',
+        'rybbit-settings',
+        'rybbit_advanced_section'
+    );
 }
 add_action('admin_init', 'rybbit_settings_init');
 
@@ -363,7 +405,45 @@ function rybbit_debounce_render() {
 	$debounce = get_option('rybbit_debounce', 500);
 	?>
     <input type='number' name='rybbit_debounce' value='<?php echo esc_attr($debounce); ?>' min='1' max='10000' step='1'>
-    <p class="description">Default: 500ms (Range: 1-10000ms)<br>Time to wait before tracking a pageview after URL changes</p>
+	<?php
+}
+
+/**
+ * Render the track JavaScript errors toggle
+ */
+function rybbit_track_errors_render() {
+	$track_errors = get_option('rybbit_track_errors', false);
+	?>
+    <label>
+        <input type='checkbox' name='rybbit_track_errors' <?php checked($track_errors); ?>>
+        Automatically capture and track JavaScript errors on your site
+    </label>
+	<?php
+}
+
+/**
+ * Render the Web Vitals performance metrics toggle
+ */
+function rybbit_web_vitals_render() {
+	$web_vitals = get_option('rybbit_web_vitals', false);
+	?>
+    <label>
+        <input type='checkbox' name='rybbit_web_vitals' <?php checked($web_vitals); ?>>
+        Collect Core Web Vitals (LCP, CLS, INP) and additional metrics (FCP, TTFB)
+    </label>
+	<?php
+}
+
+/**
+ * Render the session replay toggle
+ */
+function rybbit_session_replay_render() {
+	$session_replay = get_option('rybbit_session_replay', false);
+	?>
+    <label>
+        <input type='checkbox' name='rybbit_session_replay' <?php checked($session_replay); ?>>
+        Record user interactions and DOM changes for debugging and UX analysis
+    </label>
 	<?php
 }
 
@@ -487,6 +567,9 @@ function rybbit_add_tracking_code() {
 	$track_pgv          = get_option( 'rybbit_track_pgv', true );
 	$track_spa          = get_option( 'rybbit_track_spa', true );
 	$track_query        = get_option( 'rybbit_track_query', true );
+	$track_errors       = get_option( 'rybbit_track_errors', false );
+	$web_vitals         = get_option( 'rybbit_web_vitals', false );
+	$session_replay     = get_option( 'rybbit_session_replay', false );
 	$skip_patterns_text = get_option( 'rybbit_skip_patterns', '' );
 	$mask_patterns_text = get_option( 'rybbit_mask_patterns', '' );
 	$debounce           = get_option( 'rybbit_debounce', 500 );
@@ -559,6 +642,21 @@ function rybbit_add_tracking_code() {
 		echo "    data-debounce=\"" . esc_attr( $debounce ) . "\"\n";
 	}
 
+	// Add track errors attribute if enabled (default is disabled)
+	if ( $track_errors ) {
+		echo "    data-track-errors=\"true\"\n";
+	}
+
+	// Add web vitals attribute if enabled (default is disabled)
+	if ( $web_vitals ) {
+		echo "    data-web-vitals=\"true\"\n";
+	}
+
+	// Add session replay attribute if enabled (default is disabled)
+	if ( $session_replay ) {
+		echo "    data-session-replay=\"true\"\n";
+	}
+
 	echo "    defer\n";
 	echo "></script>\n";
 }
@@ -571,14 +669,17 @@ add_action('wp_head', 'rybbit_add_tracking_code');
  * Removes configuration data from the database.
  */
 function rybbit_uninstall() {
-	// Remove all options created by the plugin
-	delete_option('rybbit_script_url');
-	delete_option('rybbit_site_id');
-	delete_option('rybbit_track_pgv');
-	delete_option('rybbit_track_spa');
-	delete_option('rybbit_track_query');
-	delete_option('rybbit_skip_patterns');
-	delete_option('rybbit_mask_patterns');
-	delete_option('rybbit_debounce');
+    // Remove all options created by the plugin
+    delete_option('rybbit_script_url');
+    delete_option('rybbit_site_id');
+    delete_option('rybbit_track_pgv');
+    delete_option('rybbit_track_spa');
+    delete_option('rybbit_track_query');
+    delete_option('rybbit_track_errors');
+    delete_option('rybbit_web_vitals');
+    delete_option('rybbit_session_replay');
+    delete_option('rybbit_skip_patterns');
+    delete_option('rybbit_mask_patterns');
+    delete_option('rybbit_debounce');
 }
 register_uninstall_hook(__FILE__, 'rybbit_uninstall');
