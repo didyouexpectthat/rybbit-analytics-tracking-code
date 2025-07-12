@@ -43,7 +43,6 @@ function rybbit_activate() {
 	add_option( 'rybbit_track_spa', true );
 	add_option( 'rybbit_track_query', true );
 	add_option( 'rybbit_track_errors', false );
-	add_option( 'rybbit_web_vitals', false );
 	add_option( 'rybbit_session_replay', false );
 	add_option( 'rybbit_skip_patterns', '' );
 	add_option( 'rybbit_mask_patterns', '' );
@@ -180,11 +179,6 @@ function rybbit_settings_init() {
 		'default'           => false
 	) );
 
-	register_setting( 'rybbit_settings', 'rybbit_web_vitals', array(
-		'sanitize_callback' => 'rest_sanitize_boolean',
-		'default'           => false
-	) );
-
 	register_setting( 'rybbit_settings', 'rybbit_session_replay', array(
 		'sanitize_callback' => 'rest_sanitize_boolean',
 		'default'           => false
@@ -277,14 +271,6 @@ function rybbit_settings_init() {
 	);
 
 	add_settings_field(
-		'rybbit_web_vitals',
-		'Enable Web Vitals performance metrics',
-		'rybbit_web_vitals_render',
-		'rybbit-settings',
-		'rybbit_advanced_section'
-	);
-
-	add_settings_field(
 		'rybbit_session_replay',
 		'Enable session replay',
 		'rybbit_session_replay_render',
@@ -350,7 +336,7 @@ function rybbit_track_pgv_render() {
 	?>
     <label>
         <input type='checkbox' name='rybbit_track_pgv' <?php checked( $track_pgv ); ?>>
-        Automatically track the initial page view when a visitor first lands on your site
+        Track the first pageview when the script loads
     </label>
 	<?php
 }
@@ -383,6 +369,33 @@ function rybbit_track_query_render() {
 }
 
 /**
+ * Render the session replay toggle
+ */
+function rybbit_session_replay_render() {
+	$session_replay = get_option( 'rybbit_session_replay', false );
+	?>
+    <label>
+        <input type='checkbox' name='rybbit_session_replay' <?php checked( $session_replay ); ?>>
+        Record user interactions and DOM changes for debugging and UX analysis
+    </label>
+	<?php
+}
+
+/**
+ * Render the track JavaScript errors toggle
+ */
+function rybbit_track_errors_render() {
+	$track_errors = get_option( 'rybbit_track_errors', false );
+	?>
+    <label>
+        <input type='checkbox' name='rybbit_track_errors' <?php checked( $track_errors ); ?>>
+        Automatically capture and track JavaScript errors on your site
+    </label>
+	<?php
+}
+
+
+/**
  * Render the skip patterns textarea
  */
 function rybbit_skip_patterns_render() {
@@ -412,47 +425,8 @@ function rybbit_mask_patterns_render() {
 function rybbit_debounce_render() {
 	$debounce = get_option( 'rybbit_debounce', 500 );
 	?>
-    <input type='number' name='rybbit_debounce' value='<?php echo esc_attr( $debounce ); ?>' min='1' max='10000'
+    <input type='number' name='rybbit_debounce' value='<?php echo esc_attr( $debounce ); ?>' min='0' max='5000'
            step='1'>
-	<?php
-}
-
-/**
- * Render the track JavaScript errors toggle
- */
-function rybbit_track_errors_render() {
-	$track_errors = get_option( 'rybbit_track_errors', false );
-	?>
-    <label>
-        <input type='checkbox' name='rybbit_track_errors' <?php checked( $track_errors ); ?>>
-        Automatically capture and track JavaScript errors on your site
-    </label>
-	<?php
-}
-
-/**
- * Render the Web Vitals performance metrics toggle
- */
-function rybbit_web_vitals_render() {
-	$web_vitals = get_option( 'rybbit_web_vitals', false );
-	?>
-    <label>
-        <input type='checkbox' name='rybbit_web_vitals' <?php checked( $web_vitals ); ?>>
-        Collect Core Web Vitals (LCP, CLS, INP) and additional metrics (FCP, TTFB)
-    </label>
-	<?php
-}
-
-/**
- * Render the session replay toggle
- */
-function rybbit_session_replay_render() {
-	$session_replay = get_option( 'rybbit_session_replay', false );
-	?>
-    <label>
-        <input type='checkbox' name='rybbit_session_replay' <?php checked( $session_replay ); ?>>
-        Record user interactions and DOM changes for debugging and UX analysis
-    </label>
 	<?php
 }
 
@@ -538,23 +512,24 @@ function rybbit_process_patterns( $patterns_text ) {
 
 	// Validate patterns - basic check for potentially problematic characters
 	foreach ( $patterns as $key => $pattern ) {
-		// Sanitize each pattern
-		$patterns[ $key ] = sanitize_text_field( $pattern );
+		// Trim whitespace but preserve special characters needed for URL patterns
+		$patterns[ $key ] = trim( $pattern );
 
-		// Check for unbalanced wildcards or other potentially problematic patterns
-		if ( substr_count( $pattern, '*' ) > 0 && strpos( $pattern, '**' ) === false && substr_count( $pattern, '*' ) % 2 !== 0 ) {
-			// This is just a warning, not blocking submission
-			add_settings_error(
-				'rybbit_patterns',
-				'rybbit_pattern_warning',
-				'Warning: Pattern "' . esc_html( $pattern ) . '" may have unbalanced wildcards. Please verify your pattern syntax.',
-				'warning'
-			);
-		}
+ 	// No need to check for unbalanced wildcards as single * characters are valid in patterns
+ 	// We'll only validate that the pattern doesn't contain invalid JSON characters
+ 	if (json_encode($pattern) === false) {
+ 		// This is just a warning, not blocking submission
+ 		add_settings_error(
+ 			'rybbit_patterns',
+ 			'rybbit_pattern_warning',
+ 			'Warning: Pattern "' . esc_html( $pattern ) . '" contains invalid characters. Please verify your pattern syntax.',
+ 			'warning'
+ 		);
+ 	}
 	}
 
-	// Attempt to JSON encode the patterns
-	$json = json_encode( array_values( $patterns ) );
+	// Attempt to JSON encode the patterns - using JSON_UNESCAPED_SLASHES to prevent escaping forward slashes
+	$json = json_encode( array_values( $patterns ), JSON_UNESCAPED_SLASHES );
 
 	// Check for JSON encoding errors
 	if ( $json === false ) {
@@ -582,7 +557,6 @@ function rybbit_add_tracking_code() {
 	$track_spa          = get_option( 'rybbit_track_spa', true );
 	$track_query        = get_option( 'rybbit_track_query', true );
 	$track_errors       = get_option( 'rybbit_track_errors', false );
-	$web_vitals         = get_option( 'rybbit_web_vitals', false );
 	$session_replay     = get_option( 'rybbit_session_replay', false );
 	$skip_patterns_text = get_option( 'rybbit_skip_patterns', '' );
 	$mask_patterns_text = get_option( 'rybbit_mask_patterns', '' );
@@ -643,12 +617,12 @@ function rybbit_add_tracking_code() {
 
 	// Add skip patterns if set
 	if ( ! empty( $skip_patterns_json ) ) {
-		echo "    data-skip-patterns='" . esc_attr( $skip_patterns_json ) . "'\n";
+		echo "    data-skip-patterns='" . $skip_patterns_json . "'\n";
 	}
 
 	// Add mask patterns if set
 	if ( ! empty( $mask_patterns_json ) ) {
-		echo "    data-mask-patterns='" . esc_attr( $mask_patterns_json ) . "'\n";
+		echo "    data-mask-patterns='" . $mask_patterns_json . "'\n";
 	}
 
 	// Add debounce if different from default
@@ -659,11 +633,6 @@ function rybbit_add_tracking_code() {
 	// Add track errors attribute if enabled (default is disabled)
 	if ( $track_errors ) {
 		echo "    data-track-errors=\"true\"\n";
-	}
-
-	// Add web vitals attribute if enabled (default is disabled)
-	if ( $web_vitals ) {
-		echo "    data-web-vitals=\"true\"\n";
 	}
 
 	// Add session replay attribute if enabled (default is disabled)
@@ -690,7 +659,6 @@ function rybbit_uninstall() {
 	delete_option( 'rybbit_track_spa' );
 	delete_option( 'rybbit_track_query' );
 	delete_option( 'rybbit_track_errors' );
-	delete_option( 'rybbit_web_vitals' );
 	delete_option( 'rybbit_session_replay' );
 	delete_option( 'rybbit_skip_patterns' );
 	delete_option( 'rybbit_mask_patterns' );
