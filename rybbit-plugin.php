@@ -4,7 +4,7 @@
 Plugin Name: Rybbit Analytics Tracking Code
 Plugin URI: https://github.com/didyouexpectthat/rybbit-analytics-tracking-code
 Description: Integrates Rybbit tracking code into your WordPress site.
-Version: 1.4
+Version: 1.4.2
 Author: didyouexpectthat
 Author URI: https://github.com/didyouexpectthat/
 License: GNU General Public License v2.0
@@ -239,6 +239,22 @@ function rybbit_settings_init() {
 	);
 
 	add_settings_field(
+		'rybbit_session_replay',
+		'Enable session replay',
+		'rybbit_session_replay_render',
+		'rybbit-settings',
+		'rybbit_advanced_section'
+	);
+
+	add_settings_field(
+		'rybbit_track_errors',
+		'Track JavaScript errors',
+		'rybbit_track_errors_render',
+		'rybbit-settings',
+		'rybbit_advanced_section'
+	);
+
+	add_settings_field(
 		'rybbit_skip_patterns',
 		'Skip Patterns',
 		'rybbit_skip_patterns_render',
@@ -262,21 +278,7 @@ function rybbit_settings_init() {
 		'rybbit_advanced_section'
 	);
 
-	add_settings_field(
-		'rybbit_track_errors',
-		'Track JavaScript errors',
-		'rybbit_track_errors_render',
-		'rybbit-settings',
-		'rybbit_advanced_section'
-	);
 
-	add_settings_field(
-		'rybbit_session_replay',
-		'Enable session replay',
-		'rybbit_session_replay_render',
-		'rybbit-settings',
-		'rybbit_advanced_section'
-	);
 }
 
 add_action( 'admin_init', 'rybbit_settings_init' );
@@ -515,17 +517,17 @@ function rybbit_process_patterns( $patterns_text ) {
 		// Trim whitespace but preserve special characters needed for URL patterns
 		$patterns[ $key ] = trim( $pattern );
 
- 	// No need to check for unbalanced wildcards as single * characters are valid in patterns
- 	// We'll only validate that the pattern doesn't contain invalid JSON characters
- 	if (json_encode($pattern) === false) {
- 		// This is just a warning, not blocking submission
- 		add_settings_error(
- 			'rybbit_patterns',
- 			'rybbit_pattern_warning',
- 			'Warning: Pattern "' . esc_html( $pattern ) . '" contains invalid characters. Please verify your pattern syntax.',
- 			'warning'
- 		);
- 	}
+		// No need to check for unbalanced wildcards as single * characters are valid in patterns
+		// We'll only validate that the pattern doesn't contain invalid JSON characters
+		if ( json_encode( $pattern ) === false ) {
+			// This is just a warning, not blocking submission
+			add_settings_error(
+				'rybbit_patterns',
+				'rybbit_pattern_warning',
+				'Warning: Pattern "' . esc_html( $pattern ) . '" contains invalid characters. Please verify your pattern syntax.',
+				'warning'
+			);
+		}
 	}
 
 	// Attempt to JSON encode the patterns - using JSON_UNESCAPED_SLASHES to prevent escaping forward slashes
