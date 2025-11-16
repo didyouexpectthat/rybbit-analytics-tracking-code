@@ -3,7 +3,7 @@ Contributors: didyouexpectthat
 Tags: analytics, tracking, rybbit
 Requires at least: 5.0
 Tested up to: 6.8
-Stable tag: 1.3
+Stable tag: 1.4.2
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -19,6 +19,7 @@ This plugin allows you to easily add Rybbit tracking code to your WordPress site
 * Customizable script URL
 * Site ID configuration
 * Automatic script insertion in site header
+* API version toggle (v1/v2). v2 restricts the injected tag to only Skip Patterns, Mask Patterns, and Debounce
 
 == Installation ==
 
@@ -41,6 +42,11 @@ Yes, you'll need a Rybbit account to get your Site ID.
 1. The plugin settings page where you can configure your Rybbit integration.
 
 == Changelog ==
+
+= 1.4.2 =
+* Add API Version toggle (v1/v2)
+* Update injection logic to support v2 (only Skip Patterns, Mask Patterns, Debounce)
+* Support alphanumeric Site IDs for v2
 
 = 1.3 =
 * Add Automatically track inital pageview feature.

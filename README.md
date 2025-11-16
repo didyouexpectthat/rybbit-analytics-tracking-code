@@ -17,12 +17,19 @@ This plugin allows you to easily add Rybbit tracking code to your WordPress site
 1. After activation, go to Settings > Rybbit
 2. Enter your Rybbit Script URL (default: https://tracking.example.com/api/script.js)
 3. Enter your Rybbit Site ID
-4. Optionally, modify advanced settings.
+4. Choose the API Version:
+   - v1 (legacy): keeps all existing options and data attributes
+   - v2 (current): only Skip Patterns, Mask Patterns, and Debounce are included in the script tag
+5. Optionally, modify advanced settings.
 5. Save changes
    
 ![image](https://github.com/user-attachments/assets/c049e1e0-e999-456d-80ee-d1acbab703c1)
 
 The tracking code will be automatically added to your site's header once you've configured your Site ID.
+
+Notes about API versions:
+- v1 uses numeric Site IDs; v2 supports alphanumeric Site IDs. The plugin accepts both.
+- When v2 is selected, only the following data attributes are injected: data-skip-patterns, data-mask-patterns, and data-debounce (along with src and data-site-id).
 
 ## License
 

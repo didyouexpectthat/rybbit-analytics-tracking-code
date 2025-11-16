@@ -39,6 +39,8 @@ function rybbit_activate() {
 	// Initialize default options
 	add_option( 'rybbit_script_url', 'https://tracking.example.com/api/script.js' );
 	add_option( 'rybbit_site_id', '' );
+	// Default API version is v1 to preserve backward compatibility
+	add_option( 'rybbit_api_version', 'v1' );
 	add_option( 'rybbit_track_pgv', true );
 	add_option( 'rybbit_track_spa', true );
 	add_option( 'rybbit_track_query', true );
@@ -144,6 +146,12 @@ function rybbit_settings_init() {
 		'default'           => ''
 	) );
 
+	// API version toggle (v1 or v2)
+	register_setting( 'rybbit_settings', 'rybbit_api_version', array(
+		'sanitize_callback' => 'rybbit_validate_api_version',
+		'default'           => 'v1'
+	) );
+
 	register_setting( 'rybbit_settings', 'rybbit_track_pgv', array(
 		'sanitize_callback' => 'rest_sanitize_boolean',
 		'default'           => true
@@ -196,6 +204,14 @@ function rybbit_settings_init() {
 		'Advanced Settings',
 		'rybbit_advanced_section_callback',
 		'rybbit-settings'
+	);
+
+	add_settings_field(
+		'rybbit_api_version',
+		'API Version',
+		'rybbit_api_version_render',
+		'rybbit-settings',
+		'rybbit_settings_section'
 	);
 
 	add_settings_field(
@@ -309,8 +325,29 @@ function rybbit_site_id_render() {
 	$site_id = get_option( 'rybbit_site_id', '' );
 	?>
     <input type='text' class='regular-text' name='rybbit_site_id' value='<?php echo esc_attr( $site_id ); ?>'>
-    <p class="description">Your Rybbit Site ID</p>
+    <p class="description">Your Rybbit Site ID. v1 uses numeric IDs; v2 supports alphanumeric IDs. Both are accepted here.</p>
 	<?php
+}
+
+/**
+ * Render the API Version toggle (v1 or v2)
+ */
+function rybbit_api_version_render() {
+    $api_version = get_option( 'rybbit_api_version', 'v1' );
+    ?>
+    <fieldset>
+        <label>
+            <input type="radio" name="rybbit_api_version" value="v1" <?php checked( $api_version, 'v1' ); ?>>
+            v1 (legacy)
+        </label>
+        <br>
+        <label>
+            <input type="radio" name="rybbit_api_version" value="v2" <?php checked( $api_version, 'v2' ); ?>>
+            v2 (only Skip Patterns, Mask Patterns, and Debounce are used)
+        </label>
+        <p class="description">Choose the Rybbit API version your site uses. v2 restricts the injected tag to only Skip Patterns, Mask Patterns, and Debounce.</p>
+    </fieldset>
+    <?php
 }
 
 /**
@@ -495,6 +532,26 @@ function rybbit_validate_debounce( $value ) {
 }
 
 /**
+ * Validate API version option
+ *
+ * @param string $value
+ * @return string 'v1' or 'v2'
+ */
+function rybbit_validate_api_version( $value ) {
+    $value = is_string( $value ) ? strtolower( $value ) : 'v1';
+    if ( $value !== 'v1' && $value !== 'v2' ) {
+        add_settings_error(
+            'rybbit_api_version',
+            'rybbit_api_version_invalid',
+            'Invalid API version selected. Falling back to v1.',
+            'error'
+        );
+        return 'v1';
+    }
+    return $value;
+}
+
+/**
  * Process patterns from textarea to JSON array
  *
  * @param string $patterns_text Patterns from textarea (one per line)
@@ -555,6 +612,7 @@ function rybbit_add_tracking_code() {
 	// Get options with defaults
 	$script_url         = get_option( 'rybbit_script_url', 'https://tracking.example.com/api/script.js' );
 	$site_id            = get_option( 'rybbit_site_id', '' );
+	$api_version        = get_option( 'rybbit_api_version', 'v1' );
 	$track_pgv          = get_option( 'rybbit_track_pgv', true );
 	$track_spa          = get_option( 'rybbit_track_spa', true );
 	$track_query        = get_option( 'rybbit_track_query', true );
@@ -602,21 +660,7 @@ function rybbit_add_tracking_code() {
 	echo "    src=\"" . esc_url( $script_url ) . "\"\n";
 	echo "    data-site-id=\"" . esc_attr( $site_id ) . "\"\n";
 
-	// Add track inital pageview attribute if disabled (default is enabled)
-	if ( ! $track_pgv ) {
-		echo "    data-auto-track-pageview=\"false\"\n";
-	}
-
-	// Add SPA tracking attribute if disabled (default is enabled)
-	if ( ! $track_spa ) {
-		echo "    data-track-spa=\"false\"\n";
-	}
-
-	// Add query tracking attribute if disabled (default is enabled)
-	if ( ! $track_query ) {
-		echo "    data-track-query=\"false\"\n";
-	}
-
+	// For both versions, add skip/mask/debounce if applicable
 	// Add skip patterns if set
 	if ( ! empty( $skip_patterns_json ) ) {
 		echo "    data-skip-patterns='" . $skip_patterns_json . "'\n";
@@ -632,14 +676,32 @@ function rybbit_add_tracking_code() {
 		echo "    data-debounce=\"" . esc_attr( $debounce ) . "\"\n";
 	}
 
-	// Add track errors attribute if enabled (default is disabled)
-	if ( $track_errors ) {
-		echo "    data-track-errors=\"true\"\n";
-	}
+	// Only for v1: include the additional attributes
+	if ( $api_version === 'v1' ) {
+		// Add track initial pageview attribute if disabled (default is enabled)
+		if ( ! $track_pgv ) {
+			echo "    data-auto-track-pageview=\"false\"\n";
+		}
 
-	// Add session replay attribute if enabled (default is disabled)
-	if ( $session_replay ) {
-		echo "    data-session-replay=\"true\"\n";
+		// Add SPA tracking attribute if disabled (default is enabled)
+		if ( ! $track_spa ) {
+			echo "    data-track-spa=\"false\"\n";
+		}
+
+		// Add query tracking attribute if disabled (default is enabled)
+		if ( ! $track_query ) {
+			echo "    data-track-query=\"false\"\n";
+		}
+
+		// Add track errors attribute if enabled (default is disabled)
+		if ( $track_errors ) {
+			echo "    data-track-errors=\"true\"\n";
+		}
+
+		// Add session replay attribute if enabled (default is disabled)
+		if ( $session_replay ) {
+			echo "    data-session-replay=\"true\"\n";
+		}
 	}
 
 	echo "    defer\n";
@@ -657,6 +719,7 @@ function rybbit_uninstall() {
 	// Remove all options created by the plugin
 	delete_option( 'rybbit_script_url' );
 	delete_option( 'rybbit_site_id' );
+	delete_option( 'rybbit_api_version' );
 	delete_option( 'rybbit_track_pgv' );
 	delete_option( 'rybbit_track_spa' );
 	delete_option( 'rybbit_track_query' );
