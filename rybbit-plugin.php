@@ -4,7 +4,7 @@
 Plugin Name: Rybbit Analytics Tracking Code
 Plugin URI: https://github.com/didyouexpectthat/rybbit-analytics-tracking-code
 Description: Integrates Rybbit tracking code into your WordPress site.
-Version: 1.4.2
+Version: 1.5.0
 Author: didyouexpectthat
 Author URI: https://github.com/didyouexpectthat/
 License: GNU General Public License v2.0
@@ -22,7 +22,7 @@ if ( ! defined( 'WPINC' ) ) {
 }
 
 // Define plugin constants
-define( 'RYBBIT_PLUGIN_VERSION', '1.4' );
+define( 'RYBBIT_PLUGIN_VERSION', '1.5.0' );
 define( 'RYBBIT_PLUGIN_PATH', plugin_dir_path( __FILE__ ) );
 define( 'RYBBIT_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
@@ -49,6 +49,8 @@ function rybbit_activate() {
 	add_option( 'rybbit_skip_patterns', '' );
 	add_option( 'rybbit_mask_patterns', '' );
 	add_option( 'rybbit_debounce', 500 );
+    // New: Affiliate link prefixes (one per line)
+    add_option( 'rybbit_affiliate_prefixes', '' );
 }
 
 /**
@@ -177,20 +179,26 @@ function rybbit_settings_init() {
 		'default'           => ''
 	) );
 
-	register_setting( 'rybbit_settings', 'rybbit_debounce', array(
-		'sanitize_callback' => 'rybbit_validate_debounce',
-		'default'           => 500
-	) );
+ register_setting( 'rybbit_settings', 'rybbit_debounce', array(
+        'sanitize_callback' => 'rybbit_validate_debounce',
+        'default'           => 500
+    ) );
 
-	register_setting( 'rybbit_settings', 'rybbit_track_errors', array(
-		'sanitize_callback' => 'rest_sanitize_boolean',
-		'default'           => false
-	) );
+    register_setting( 'rybbit_settings', 'rybbit_track_errors', array(
+        'sanitize_callback' => 'rest_sanitize_boolean',
+        'default'           => false
+    ) );
 
-	register_setting( 'rybbit_settings', 'rybbit_session_replay', array(
-		'sanitize_callback' => 'rest_sanitize_boolean',
-		'default'           => false
-	) );
+    register_setting( 'rybbit_settings', 'rybbit_session_replay', array(
+        'sanitize_callback' => 'rest_sanitize_boolean',
+        'default'           => false
+    ) );
+
+    // New: Affiliate link prefixes (one per line)
+    register_setting( 'rybbit_settings', 'rybbit_affiliate_prefixes', array(
+        'sanitize_callback' => 'rybbit_sanitize_affiliate_prefixes',
+        'default'           => ''
+    ) );
 
 	add_settings_section(
 		'rybbit_settings_section',
@@ -199,12 +207,12 @@ function rybbit_settings_init() {
 		'rybbit-settings'
 	);
 
-	add_settings_section(
-		'rybbit_advanced_section',
-		'Advanced Settings',
-		'rybbit_advanced_section_callback',
-		'rybbit-settings'
-	);
+ add_settings_section(
+        'rybbit_advanced_section',
+        'Advanced Settings',
+        'rybbit_advanced_section_callback',
+        'rybbit-settings'
+    );
 
 	add_settings_field(
 		'rybbit_api_version',
@@ -286,13 +294,22 @@ function rybbit_settings_init() {
 		'rybbit_advanced_section'
 	);
 
-	add_settings_field(
-		'rybbit_debounce',
-		'Debounce Duration (ms)',
-		'rybbit_debounce_render',
-		'rybbit-settings',
-		'rybbit_advanced_section'
-	);
+    add_settings_field(
+        'rybbit_debounce',
+        'Debounce Duration (ms)',
+        'rybbit_debounce_render',
+        'rybbit-settings',
+        'rybbit_advanced_section'
+    );
+
+    // New: Affiliate prefixes field
+    add_settings_field(
+        'rybbit_affiliate_prefixes',
+        'Affiliate Link Prefixes',
+        'rybbit_affiliate_prefixes_render',
+        'rybbit-settings',
+        'rybbit_advanced_section'
+    );
 
 
 }
@@ -343,9 +360,9 @@ function rybbit_api_version_render() {
         <br>
         <label>
             <input type="radio" name="rybbit_api_version" value="v2" <?php checked( $api_version, 'v2' ); ?>>
-            v2 (only Skip Patterns, Mask Patterns, and Debounce are used)
+            v2 (Skip Patterns, Mask Patterns, Debounce, and Affiliate Link Prefixes are used)
         </label>
-        <p class="description">Choose the Rybbit API version your site uses. v2 restricts the injected tag to only Skip Patterns, Mask Patterns, and Debounce.</p>
+        <p class="description">Choose the Rybbit API version your site uses. v2 restricts the injected tag to Skip Patterns, Mask Patterns, Debounce, and Affiliate Link Prefixes.</p>
     </fieldset>
     <?php
 }
@@ -364,7 +381,7 @@ function rybbit_settings_section_callback() {
  *
  */
 function rybbit_advanced_section_callback() {
-	echo '<p>Configure advanced tracking options for Rybbit.</p>';
+    echo '<p>Configure advanced tracking options for Rybbit.</p>';
 }
 
 /**
@@ -462,11 +479,25 @@ function rybbit_mask_patterns_render() {
  * Render the debounce duration field
  */
 function rybbit_debounce_render() {
-	$debounce = get_option( 'rybbit_debounce', 500 );
-	?>
+    $debounce = get_option( 'rybbit_debounce', 500 );
+    ?>
     <input type='number' name='rybbit_debounce' value='<?php echo esc_attr( $debounce ); ?>' min='0' max='5000'
            step='1'>
-	<?php
+    <?php
+}
+
+/**
+ * Render the Affiliate Link Prefixes textarea
+ */
+function rybbit_affiliate_prefixes_render() {
+    $prefixes = get_option( 'rybbit_affiliate_prefixes', '' );
+    ?>
+    <textarea name='rybbit_affiliate_prefixes' rows='4' cols='50'><?php echo esc_textarea( $prefixes ); ?></textarea>
+    <p class="description">
+        Track clicks on shortened/cloaked affiliate links by specifying URL path prefixes.
+        Enter one prefix per line or separate with commas. Examples: /offer, /go
+    </p>
+    <?php
 }
 
 /**
@@ -606,6 +637,69 @@ function rybbit_process_patterns( $patterns_text ) {
 }
 
 /**
+ * Sanitize affiliate prefixes input (stored as textarea text)
+ * - accepts comma or newline separated values
+ * - normalizes to one per line, leading slash, path portion only
+ *
+ * @param mixed $value
+ * @return string
+ */
+function rybbit_sanitize_affiliate_prefixes( $value ) {
+    if ( ! is_string( $value ) ) {
+        return '';
+    }
+
+    $parts = preg_split( '/[\r\n,]+/', $value );
+    $clean = array();
+    foreach ( $parts as $p ) {
+        $p = trim( $p );
+        if ( $p === '' ) { continue; }
+        // Extract path if a full URL was provided
+        $path = parse_url( $p, PHP_URL_PATH );
+        if ( ! is_string( $path ) || $path === '' ) {
+            $path = $p; // fallback to raw
+        }
+        // Ensure leading slash
+        if ( $path[0] !== '/' ) {
+            $path = '/' . $path;
+        }
+        // Remove trailing whitespace and collapse consecutive slashes
+        $path = preg_replace( '#/{2,}#', '/', $path );
+        $clean[] = $path;
+    }
+
+    // De-duplicate while preserving order
+    $clean = array_values( array_unique( $clean ) );
+
+    return implode( "\n", $clean );
+}
+
+/**
+ * Convert affiliate prefixes textarea to JSON array (for data attribute)
+ *
+ * @param string $prefixes_text
+ * @return string JSON or empty string
+ */
+function rybbit_process_affiliate_prefixes( $prefixes_text ) {
+    if ( empty( $prefixes_text ) ) { return ''; }
+    $parts = preg_split( '/[\r\n,]+/', $prefixes_text );
+    $prefixes = array();
+    foreach ( $parts as $p ) {
+        $p = trim( $p );
+        if ( $p === '' ) { continue; }
+        $path = parse_url( $p, PHP_URL_PATH );
+        if ( ! is_string( $path ) || $path === '' ) { $path = $p; }
+        if ( $path[0] !== '/' ) { $path = '/' . $path; }
+        $path = preg_replace( '#/{2,}#', '/', $path );
+        $prefixes[] = $path;
+    }
+    if ( empty( $prefixes ) ) { return ''; }
+    $prefixes = array_values( array_unique( $prefixes ) );
+    $json = json_encode( $prefixes, JSON_UNESCAPED_SLASHES );
+    return $json === false ? '' : $json;
+}
+
+/**
  * Add the Rybbit tracking code to the site header
  */
 function rybbit_add_tracking_code() {
@@ -620,7 +714,8 @@ function rybbit_add_tracking_code() {
 	$session_replay     = get_option( 'rybbit_session_replay', false );
 	$skip_patterns_text = get_option( 'rybbit_skip_patterns', '' );
 	$mask_patterns_text = get_option( 'rybbit_mask_patterns', '' );
-	$debounce           = get_option( 'rybbit_debounce', 500 );
+ $debounce           = get_option( 'rybbit_debounce', 500 );
+ $affiliate_prefixes_text = get_option( 'rybbit_affiliate_prefixes', '' );
 
 	// Validate script URL
 	if ( empty( $script_url ) || ! filter_var( $script_url, FILTER_VALIDATE_URL ) ) {
@@ -645,15 +740,17 @@ function rybbit_add_tracking_code() {
 	}
 
 	// Process patterns from textarea to JSON arrays
-	try {
-		$skip_patterns_json = rybbit_process_patterns( $skip_patterns_text );
-		$mask_patterns_json = rybbit_process_patterns( $mask_patterns_text );
-	} catch ( Exception $e ) {
-		// Log error but continue with empty patterns
-		error_log( 'Rybbit: Error processing patterns: ' . $e->getMessage() );
-		$skip_patterns_json = '';
-		$mask_patterns_json = '';
-	}
+ try {
+        $skip_patterns_json = rybbit_process_patterns( $skip_patterns_text );
+        $mask_patterns_json = rybbit_process_patterns( $mask_patterns_text );
+        $affiliate_prefixes_json = rybbit_process_affiliate_prefixes( $affiliate_prefixes_text );
+    } catch ( Exception $e ) {
+        // Log error but continue with empty patterns
+        error_log( 'Rybbit: Error processing patterns: ' . $e->getMessage() );
+        $skip_patterns_json = '';
+        $mask_patterns_json = '';
+        $affiliate_prefixes_json = '';
+    }
 
 	// Output the script
 	echo "<script\n";
@@ -671,10 +768,15 @@ function rybbit_add_tracking_code() {
 		echo "    data-mask-patterns='" . $mask_patterns_json . "'\n";
 	}
 
-	// Add debounce if different from default
-	if ( $debounce != 500 ) {
-		echo "    data-debounce=\"" . esc_attr( $debounce ) . "\"\n";
-	}
+ // Add debounce if different from default
+ if ( $debounce != 500 ) {
+     echo "    data-debounce=\"" . esc_attr( $debounce ) . "\"\n";
+ }
+
+ // Add affiliate link prefixes if set
+ if ( ! empty( $affiliate_prefixes_json ) ) {
+     echo "    data-affiliate-prefixes='" . $affiliate_prefixes_json . "'\n";
+ }
 
 	// Only for v1: include the additional attributes
 	if ( $api_version === 'v1' ) {
@@ -728,6 +830,7 @@ function rybbit_uninstall() {
 	delete_option( 'rybbit_skip_patterns' );
 	delete_option( 'rybbit_mask_patterns' );
 	delete_option( 'rybbit_debounce' );
+    delete_option( 'rybbit_affiliate_prefixes' );
 }
 
 register_uninstall_hook( __FILE__, 'rybbit_uninstall' );
